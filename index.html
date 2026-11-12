@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+    (function() {
+      const theme = localStorage.getItem('sp_theme') ? JSON.parse(localStorage.getItem('sp_theme')) : 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
   <title>SoundProject — музыка, которую делают рядом</title>
   <meta name="description" content="SoundProject — независимая музыкальная платформа.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,7 +25,7 @@
   <div class="container">
     <a class="navbar-brand" href="index.html"><i class="bi bi-soundwave logo-icon"></i> SoundProject</a>
     <div class="d-flex align-items-center gap-2 d-lg-none">
-      <button class="theme-toggle" aria-label="Сменить тему"><i class="bi bi-sun-fill"></i></button>
+      <button class="theme-toggle" onclick="toggleThemeGlobal()" aria-label="Сменить тему"><i class="bi bi-sun-fill"></i></button>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Открыть меню"><span class="navbar-toggler-icon"></span></button>
     </div>
     <div class="collapse navbar-collapse" id="mainNav">
@@ -30,7 +36,7 @@
         <li class="nav-item"><a class="nav-link" href="about.html">О нас</a></li>
       </ul>
       <div class="d-flex align-items-center gap-2">
-        <button class="theme-toggle d-none d-lg-flex" aria-label="Сменить тему"><i class="bi bi-sun-fill"></i></button>
+        <button class="theme-toggle d-none d-lg-flex" onclick="toggleThemeGlobal()" aria-label="Сменить тему"><i class="bi bi-sun-fill"></i></button>
         <button class="btn-sp" type="button" data-bs-toggle="modal" data-bs-target="#uploadModal"><i class="bi bi-plus-lg"></i> Загрузить</button>
       </div>
     </div>
@@ -114,7 +120,7 @@
           <article class="author-bio h-100">
             <i class="bi bi-heart fs-1 d-block mb-3" style="color:var(--sp-orange)"></i>
             <h3 class="h5">Личная медиатека</h3>
-            <p style="color:var(--sp-muted);font-size:.92rem">Лайки хранятся в браузере и собираются на странице «Избранное» — всегда под рукой.</p>
+            <p style="color:var(--sp-muted);font-size:.92rem">Лайки хранятся в браузере и собираются в каталоге — всегда под рукой.</p>
           </article>
         </div>
         <div class="col-12 col-md-4">
@@ -125,16 +131,6 @@
           </article>
         </div>
       </div>
-    </div>
-  </section>
-
-  <!-- CTA -->
-  <section class="alt py-5 reveal">
-    <div class="container text-center" style="max-width:600px">
-      <p class="section-eyebrow">Присоединяйтесь</p>
-      <h2 class="section-title mb-3">Загрузите первый трек <em>прямо сейчас</em></h2>
-      <p style="color:var(--sp-muted)" class="mb-4">Это бесплатно. Просто заполните форму — и ваш трек окажется в общем каталоге.</p>
-      <button class="btn-sp" data-bs-toggle="modal" data-bs-target="#uploadModal"><i class="bi bi-plus-lg"></i> Загрузить трек</button>
     </div>
   </section>
 </main>
@@ -175,7 +171,7 @@
     </div>
     <div class="footer-bottom d-flex flex-wrap justify-content-between gap-2">
       <span>© 2026 SoundProject. Все права защищены.</span>
-      <a href="#top" style="color:var(--sp-muted)" class="d-flex align-items-center gap-1">Наверх <i class="bi bi-arrow-up"></i></a>
+      <a href="#top" class="d-flex align-items-center gap-1" style="color:var(--sp-muted)">Наверх <i class="bi bi-arrow-up"></i></a>
     </div>
   </div>
 </footer>
@@ -252,25 +248,21 @@
 <aside class="global-player" aria-label="Аудиоплеер">
   <div class="container h-100">
     <div class="d-flex align-items-center h-100 gap-3">
-      <!-- Инфо -->
       <div style="min-width:0;flex:0 0 180px" class="d-none d-md-block">
         <div class="player-title text-truncate" id="playerTitle">Выберите трек</div>
         <div class="player-artist text-truncate" id="playerArtist">SoundProject</div>
       </div>
-      <!-- Управление -->
       <div class="d-flex align-items-center gap-1">
         <button class="player-btn" id="pPrev" aria-label="Предыдущий"><i class="bi bi-skip-start-fill"></i></button>
         <button class="player-btn play-btn" id="pToggle" aria-label="Играть / Пауза"><i class="bi bi-play-fill"></i></button>
         <button class="player-btn" id="pNext" aria-label="Следующий"><i class="bi bi-skip-end-fill"></i></button>
       </div>
-      <!-- Прогресс -->
       <div class="player-progress-wrap flex-grow-1">
         <span class="player-time d-none d-sm-inline" id="pTime">0:00 / 0:00</span>
         <div class="player-bar-track flex-grow-1" id="pBarTrack" role="progressbar" aria-label="Прогресс" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
           <div class="player-bar-fill" id="pBarFill" style="width:0"></div>
         </div>
       </div>
-      <!-- Громкость -->
       <div class="vol-wrap d-none d-lg-flex">
         <i class="bi bi-volume-up" style="color:var(--sp-muted);font-size:.9rem"></i>
         <input type="range" id="pVolume" min="0" max="100" value="80" aria-label="Громкость">
