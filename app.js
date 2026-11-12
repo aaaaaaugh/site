@@ -1,6 +1,6 @@
 /* ================================================================
    SoundProject — app.js
-   Единый скрипт для всех 4 страниц
+   Единый скрипт для всех страниц
    ================================================================ */
 
 /* ---------- Демо-треки ---------- */
@@ -35,7 +35,7 @@ const store = {
 function allTracks(){ return BASE_TRACKS.concat(store.get('sp_uploads',[])); }
 function fmt3(n){ return n>=1000 ? (n/1000).toFixed(1)+'K' : String(n); }
 
-/* ---------- Тема ---------- */
+/* ---------- Тема (Светлая / Чёрная) ---------- */
 function applyTheme(t){
   document.documentElement.setAttribute('data-theme', t);
   store.set('sp_theme', t);
@@ -47,7 +47,8 @@ function applyTheme(t){
   });
 }
 function toggleTheme(){
-  applyTheme(document.documentElement.getAttribute('data-theme')==='light' ? 'dark' : 'light');
+  const current = document.documentElement.getAttribute('data-theme');
+  applyTheme(current === 'light' ? 'dark' : 'light');
 }
 
 /* ---------- Плеер ---------- */
@@ -79,18 +80,15 @@ function refreshUI(){
   const playing = !audio.paused;
   document.body.classList.toggle('is-playing', playing);
 
-  /* Кнопки play на карточках */
   qsa('[data-play]').forEach(b=>{
     const on = playing && Number(b.dataset.play)===currentId;
     const icon = b.querySelector('i');
     if(icon) icon.className = `bi ${on?'bi-pause-fill':'bi-play-fill'}`;
   });
 
-  /* Главная кнопка плеера */
   const pt = ge('pToggle');
   if(pt){ const ic = pt.querySelector('i'); if(ic) ic.className = `bi ${playing?'bi-pause-fill':'bi-play-fill'}`; }
 
-  /* Лайки */
   const likes = store.get('sp_likes',[]);
   qsa('[data-like]').forEach(b=>{
     const liked = likes.includes(Number(b.dataset.like));
@@ -118,7 +116,6 @@ function showToast(msg){
   bootstrap.Toast.getOrCreateInstance(el,{delay:3500}).show();
 }
 
-/* ---------- HTML карточки ---------- */
 function cardHTML(t, col='col-12 col-sm-6 col-lg-4', badge=''){
   const labels = ['','ТРЕНД','НОВИНКА','ПОПУЛЯРНЫЙ','ХАЙП'];
   const lbl = badge || (t.id<=3 ? labels[t.id] : '');
@@ -153,7 +150,6 @@ function renderCards(sel, list, col){
   if(box){ box.innerHTML = list.map(t=>cardHTML(t,col)).join(''); refreshUI(); }
 }
 
-/* ---------- Scroll-reveal ---------- */
 function initReveal(){
   const obs = new IntersectionObserver((entries)=>{
     entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('visible'); });
@@ -164,18 +160,31 @@ function initReveal(){
 /* ---------- DOMContentLoaded ---------- */
 document.addEventListener('DOMContentLoaded', ()=>{
 
-  /* Тема */
-  applyTheme(store.get('sp_theme','dark'));
-  qsa('.theme-toggle').forEach(b=>b.addEventListener('click',toggleTheme));
+  /* Инициализация темы */
+  const savedTheme = store.get('sp_theme','dark');
+  applyTheme(savedTheme);
+  
+  /* Обработчики на все кнопки смены темы на странице */
+  qsa('.theme-toggle').forEach(b => {
+    b.addEventListener('click', toggleTheme);
+  });
 
-  /* Scroll-to-top */
+  /* Кнопка прокрутки наверх (backTop) */
   const bt = ge('backTop');
   if(bt){
-    window.addEventListener('scroll',()=>bt.classList.toggle('visible', window.scrollY>400));
-    bt.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+    window.addEventListener('scroll', () => {
+      if(window.scrollY > 300) {
+        bt.classList.add('visible');
+      } else {
+        bt.classList.remove('visible');
+      }
+    });
+    bt.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
   }
 
-  /* Нижний плеер — прогресс (кликабельная полоска) */
   const barTrack = ge('pBarTrack');
   if(barTrack){
     barTrack.addEventListener('click',e=>{
@@ -185,7 +194,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
     });
   }
 
-  /* Плеер — кнопки управления */
   ge('pToggle')?.addEventListener('click',()=>{
     if(currentId===null) playTrack(store.get('sp_last',1));
     else audio.paused ? audio.play() : audio.pause();
@@ -193,11 +201,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
   ge('pPrev')?.addEventListener('click',()=>step(-1));
   ge('pNext')?.addEventListener('click',()=>step(1));
 
-  /* Громкость */
   const vol = ge('pVolume');
   vol?.addEventListener('input',()=>{ audio.volume = vol.value/100; });
 
-  /* Обновление полоски прогресса плеера */
   audio.addEventListener('timeupdate',()=>{
     const fill = ge('pBarFill'), tm = ge('pTime');
     if(fill && audio.duration) fill.style.width = (audio.currentTime/audio.duration*100)+'%';
@@ -207,7 +213,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
   ['play','pause','ended'].forEach(ev=>audio.addEventListener(ev,refreshUI));
   audio.addEventListener('ended',()=>step(1));
 
-  /* Волна в hero */
   const wave = ge('wave');
   if(wave){
     wave.innerHTML = Array.from({length:52},(_,i)=>{
@@ -216,7 +221,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }).join('');
   }
 
-  /* Форма загрузки трека */
   const uploadForm = ge('uploadForm');
   uploadForm?.addEventListener('submit', e=>{
     e.preventDefault();
@@ -241,15 +245,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
     document.dispatchEvent(new CustomEvent('tracks:changed'));
   });
 
-  /* Scroll-reveal */
   initReveal();
-
-  /* Готово */
   document.dispatchEvent(new CustomEvent('sp:ready'));
   refreshUI();
 });
 
-/* ---------- Клики по data-атрибутам ---------- */
 document.addEventListener('click', e=>{
   const p = e.target.closest('[data-play]');
   if(p){ playTrack(p.dataset.play); return; }
@@ -257,5 +257,4 @@ document.addEventListener('click', e=>{
   if(l) toggleLike(l.dataset.like);
 });
 
-/* ---------- Экспорт ---------- */
 window.SP = { audio, esc, fmt, allTracks, renderCards, playTrack, toggleLike, showToast, refreshUI, store, cardHTML };
