@@ -1,9 +1,7 @@
 /* ================================================================
-   SoundProject — app.js
-   Единый скрипт для всех страниц
+   SoundProject — app.js (с глобальным переключением темы)
    ================================================================ */
 
-/* ---------- Демо-треки ---------- */
 const SRC = n => `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${n}.mp3`;
 const BASE_TRACKS = [
   { id:1,  title:'Ночной маршрут',   artist:'Lume',       genre:'Electronic', hue:18,  plays:4812, src:SRC(1)  },
@@ -20,7 +18,6 @@ const BASE_TRACKS = [
   { id:12, title:'Долгий вдох',      artist:'Ostrov',     genre:'Ambient',     hue:150, plays:3100, src:SRC(12) }
 ];
 
-/* ---------- Утилиты ---------- */
 const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = s => isFinite(s) ? `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}` : '0:00';
 const ge  = id => document.getElementById(id);
@@ -35,23 +32,20 @@ const store = {
 function allTracks(){ return BASE_TRACKS.concat(store.get('sp_uploads',[])); }
 function fmt3(n){ return n>=1000 ? (n/1000).toFixed(1)+'K' : String(n); }
 
-/* ---------- Тема (Светлая / Чёрная) ---------- */
-function applyTheme(t){
-  document.documentElement.setAttribute('data-theme', t);
-  store.set('sp_theme', t);
-  qsa('.theme-toggle').forEach(b => {
-    b.innerHTML = t==='light'
-      ? '<i class="bi bi-moon-fill"></i>'
-      : '<i class="bi bi-sun-fill"></i>';
-    b.setAttribute('aria-label', t==='light' ? 'Тёмная тема' : 'Светлая тема');
+/* Глобальное переключение темы */
+window.toggleThemeGlobal = function() {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  store.set('sp_theme', next);
+  
+  document.querySelectorAll('.theme-toggle').forEach(b => {
+    b.innerHTML = next === 'light' ? '<i class="bi bi-moon-fill"></i>' : '<i class="bi bi-sun-fill"></i>';
+    b.setAttribute('aria-label', next === 'light' ? 'Тёмная тема' : 'Светлая тема');
   });
-}
-function toggleTheme(){
-  const current = document.documentElement.getAttribute('data-theme');
-  applyTheme(current === 'light' ? 'dark' : 'light');
-}
+};
 
-/* ---------- Плеер ---------- */
+/* Плеер */
 const audio = new Audio();
 audio.preload = 'none';
 let currentId = null;
@@ -157,27 +151,18 @@ function initReveal(){
   qsa('.reveal').forEach(el=>obs.observe(el));
 }
 
-/* ---------- DOMContentLoaded ---------- */
 document.addEventListener('DOMContentLoaded', ()=>{
-
-  /* Инициализация темы */
   const savedTheme = store.get('sp_theme','dark');
-  applyTheme(savedTheme);
+  document.documentElement.setAttribute('data-theme', savedTheme);
   
-  /* Обработчики на все кнопки смены темы на странице */
   qsa('.theme-toggle').forEach(b => {
-    b.addEventListener('click', toggleTheme);
+    b.innerHTML = savedTheme === 'light' ? '<i class="bi bi-moon-fill"></i>' : '<i class="bi bi-sun-fill"></i>';
   });
 
-  /* Кнопка прокрутки наверх (backTop) */
   const bt = ge('backTop');
   if(bt){
     window.addEventListener('scroll', () => {
-      if(window.scrollY > 300) {
-        bt.classList.add('visible');
-      } else {
-        bt.classList.remove('visible');
-      }
+      bt.classList.toggle('visible', window.scrollY > 300);
     });
     bt.addEventListener('click', (e) => {
       e.preventDefault();
